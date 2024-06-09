@@ -1,2 +1,2 @@
 
-Python programming codes.
+Python projests
