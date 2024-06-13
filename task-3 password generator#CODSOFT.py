@@ -1,86 +1,63 @@
+import random
+import string
 import sqlite3
+import re
 from tkinter import *
 from tkinter import messagebox
-import math
 
-class ScientificCalculatorGUI():
+def generate_password(length):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(random.choice(characters) for _ in range(length))
+    return password
+
+class PasswordGeneratorGUI():
     def __init__(self, master):
         self.master = master
-        self.num1 = DoubleVar()
-        self.num2 = DoubleVar()
-        self.result = StringVar()
+        self.password_length = IntVar()
+        self.generated_password = StringVar()
 
-        self.master.title('Scientific Calculator')
-        self.master.geometry('400x300')
+        self.master.title('Password Generator')
+        self.master.geometry('300x200')
 
-        self.label_num1 = Label(self.master, text="Enter Number 1:")
-        self.label_num1.pack()
+        self.label = Label(self.master, text="Enter Password Length:")
+        self.label.pack()
 
-        self.entry_num1 = Entry(self.master, textvariable=self.num1)
-        self.entry_num1.pack()
+        self.length_entry = Entry(self.master, textvariable=self.password_length)
+        self.length_entry.pack()
 
-        self.label_num2 = Label(self.master, text="Enter Number 2:")
-        self.label_num2.pack()
+        self.generate_button = Button(self.master, text="Generate Password", command=self.generate_password)
+        self.generate_button.pack()
 
-        self.entry_num2 = Entry(self.master, textvariable=self.num2)
-        self.entry_num2.pack()
+        self.generated_label = Label(self.master, textvariable=self.generated_password)
+        self.generated_label.pack()
 
-        self.operation_label = Label(self.master, text="Choose Operation:")
-        self.operation_label.pack()
+        
 
-        self.operation_var = StringVar()
-        self.operation_var.set("+")
 
-        self.operations_menu = OptionMenu(self.master, self.operation_var, "+", "-", "*", "/", "sqrt", "^")
-        self.operations_menu.pack()
-
-        self.calculate_button = Button(self.master, text="Calculate", command=self.calculate)
-        self.calculate_button.pack()
-
-        self.result_label = Label(self.master, textvariable=self.result)
-        self.result_label.pack()
-
-    def calculate(self):
+    def generate_password(self):
         try:
-            num1 = self.num1.get()
-            num2 = self.num2.get()
-            operation = self.operation_var.get()
-
-            if operation == "+":
-                result = num1 + num2
-            elif operation == "-":
-                result = num1 - num2
-            elif operation == "*":
-                result = num1 * num2
-            elif operation == "/":
-                if num2 == 0:
-                    messagebox.showerror("Error", "Cannot divide by zero.")
-                    return
-                result = num1 / num2
-            elif operation == "sqrt":
-                if num1 < 0:
-                    messagebox.showerror("Error", "Cannot calculate square root of a negative number.")
-                    return
-                result = math.sqrt(num1)
-            elif operation == "^":
-                result = num1 ** num2
-            else:
-                messagebox.showerror("Error", "Invalid operation.")
+            length = self.password_length.get()
+            if length <= 0:
+                messagebox.showerror("Error", "Please enter a positive integer for password length.")
                 return
 
-            self.result.set("Result: " + str(result))
+            password = generate_password(length)
+            self.generated_password.set("Generated Password: " + password)
 
-            # Save calculation history to SQLite
-            with sqlite3.connect("calculation_history.db") as db:
+            # Save to SQLite
+            with sqlite3.connect("generated_passwords.db") as db:
                 cursor = db.cursor()
-                cursor.execute("CREATE TABLE IF NOT EXISTS history(Calculation TEXT NOT NULL);")
-                cursor.execute("INSERT INTO history(Calculation) VALUES(?);", (f"{num1} {operation} {num2} = {result}",))
+                cursor.execute("CREATE TABLE IF NOT EXISTS passwords(GeneratedPassword TEXT NOT NULL);")
+                cursor.execute("INSERT INTO passwords(GeneratedPassword) VALUES(?);", (password,))
                 db.commit()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid input. Please enter valid numbers.")
+            messagebox.showerror("Error", "Invalid input. Please enter a valid integer for password length.")
+
+
+       
 
 if __name__ == "__main__":
     root = Tk()
-    app = ScientificCalculatorGUI(root)
+    app = PasswordGeneratorGUI(root)
     root.mainloop()
